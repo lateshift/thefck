@@ -12,15 +12,9 @@ A single binary containing all the fun you can think of. And since it’s writte
 
 Because most duplicate-file finders are a giant **clusterfuck**: gazillions of esoteric options, wrapped in build requirements that make your package manager weep.
 
-## ROI?
-
-I honestly don’t give `thefck`.
-
 ## Required & mildly funny AI-generated image
 
-
-<img width="800"  alt="yobro" src="https://github.com/user-attachments/assets/977369f0-5cde-463d-9bee-3530d8c18f8f" />
-
+<img width="800" alt="yomama" src="https://github.com/user-attachments/assets/022cf840-849b-426d-831c-3c24cbcb0b14" />
 
 
 ## What Gets Indexed
