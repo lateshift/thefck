@@ -16,6 +16,13 @@ Because most duplicate-file finders are a giant **clusterfuck**: gazillions of e
 
 I honestly don’t give `thefck`.
 
+## Required & mildly funny AI-generated image
+
+
+<img width="800"  alt="yobro" src="https://github.com/user-attachments/assets/977369f0-5cde-463d-9bee-3530d8c18f8f" />
+
+
+
 ## What Gets Indexed
 
 Each indexed file stores:
