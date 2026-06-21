@@ -16,6 +16,15 @@ Because most duplicate-file finders are a giant **clusterfuck**: gazillions of e
 
 <img width="800" alt="yomama" src="https://github.com/user-attachments/assets/022cf840-849b-426d-831c-3c24cbcb0b14" />
 
+### Let’s drop some rhymes.
+
+> Yo, I crawl the tree, I hash the block,<br>
+> I find the dupe and I make it talk.<br>
+> bbolt in the back, Vue in the front,<br>
+> one binary doing the whole damn stunt.<br>
+>  
+> **Mic drop.**
+
 
 ## What Gets Indexed
 
