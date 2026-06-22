@@ -197,12 +197,37 @@ tbody tr:hover {
   background: #f7fbfb;
 }
 
+tbody tr.can-expand {
+  cursor: pointer;
+}
+
+tbody tr.can-expand:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: -2px;
+}
+
 .duplicate-row {
   background: #fff7ed;
 }
 
 .duplicate-row:hover {
   background: #ffedd5;
+}
+
+.duplicate-row.expanded {
+  background: #ffedd5;
+}
+
+.duplicate-subrow {
+  background: #fffaf4;
+}
+
+.duplicate-subrow:hover {
+  background: #fff3e6;
+}
+
+.duplicate-subrow td {
+  border-bottom-color: #f3dfc8;
 }
 
 .header-button {
@@ -244,6 +269,42 @@ tbody tr:hover {
   overflow-wrap: anywhere;
 }
 
+.duplicate-cell {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-width: 190px;
+}
+
+.row-toggle,
+.row-toggle-spacer {
+  flex: 0 0 auto;
+  height: 24px;
+  width: 24px;
+}
+
+.row-toggle {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #fdba74;
+  border-radius: 6px;
+  color: #9a3412;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+}
+
+.row-toggle:hover {
+  background: #ffedd5;
+}
+
+.row-toggle-spacer {
+  display: inline-block;
+}
+
 .status-pill {
   background: #e8f5f3;
   border: 1px solid #b7dcd6;
@@ -259,6 +320,12 @@ tbody tr:hover {
   background: #fed7aa;
   border-color: #fdba74;
   color: #9a3412;
+}
+
+.match-count {
+  color: #9a3412;
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .empty-row {

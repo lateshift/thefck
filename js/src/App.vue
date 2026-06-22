@@ -4,6 +4,7 @@ import {
   FlexRender,
   createColumnHelper,
   getCoreRowModel,
+  getExpandedRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useVueTable,
@@ -17,6 +18,7 @@ const search = ref('')
 const duplicateFilter = ref('duplicates')
 const sorting = ref([{ id: 'absolute_path', desc: false }])
 const pagination = ref({ pageIndex: 0, pageSize })
+const expanded = ref({})
 
 const columnHelper = createColumnHelper()
 const columns = [
@@ -78,6 +80,44 @@ const filteredRecords = computed(() => {
   })
 })
 
+const duplicateGroups = computed(() => {
+  const groups = new Map()
+  for (const record of records.value) {
+    const key = duplicateGroupKey(record)
+    if (!key) {
+      continue
+    }
+    if (!groups.has(key)) {
+      groups.set(key, [])
+    }
+    groups.get(key).push(record)
+  }
+
+  for (const group of groups.values()) {
+    group.sort(compareRecordsByPath)
+  }
+  return groups
+})
+
+const tableRecords = computed(() =>
+  filteredRecords.value.map((record) => {
+    const group = duplicateGroups.value.get(duplicateGroupKey(record)) ?? []
+    const subRows = record.duplicate
+      ? group
+          .filter((match) => match.absolute_path !== record.absolute_path)
+          .map((match) => ({
+            ...match,
+            subRows: [],
+          }))
+      : []
+
+    return {
+      ...record,
+      subRows,
+    }
+  }),
+)
+
 const duplicateCount = computed(() => records.value.filter((record) => record.duplicate).length)
 const activeFilters = computed(() => {
   const filters = [
@@ -97,7 +137,7 @@ const activeFilters = computed(() => {
 
 const table = useVueTable({
   get data() {
-    return filteredRecords.value
+    return tableRecords.value
   },
   columns,
   state: {
@@ -106,6 +146,9 @@ const table = useVueTable({
     },
     get pagination() {
       return pagination.value
+    },
+    get expanded() {
+      return expanded.value
     },
   },
   onSortingChange: (updaterOrValue) => {
@@ -116,9 +159,21 @@ const table = useVueTable({
     pagination.value =
       typeof updaterOrValue === 'function' ? updaterOrValue(pagination.value) : updaterOrValue
   },
+  onExpandedChange: (updaterOrValue) => {
+    expanded.value =
+      typeof updaterOrValue === 'function' ? updaterOrValue(expanded.value) : updaterOrValue
+  },
+  getRowId: (record, index, parent) => {
+    const path = record.absolute_path || String(index)
+    return parent ? `${parent.id}::${path}` : path
+  },
+  getSubRows: (record) => record.subRows,
+  getRowCanExpand: (row) => row.depth === 0 && row.original.subRows.length > 0,
   getCoreRowModel: getCoreRowModel(),
+  getExpandedRowModel: getExpandedRowModel(),
   getSortedRowModel: getSortedRowModel(),
   getPaginationRowModel: getPaginationRowModel(),
+  paginateExpandedRows: false,
 })
 
 const pageRows = computed(() => table.getRowModel().rows)
@@ -132,6 +187,7 @@ const pageEnd = computed(() =>
 onMounted(fetchFiles)
 
 watch([search, duplicateFilter], () => {
+  expanded.value = {}
   table.setPageIndex(0)
 })
 
@@ -145,6 +201,7 @@ async function fetchFiles() {
     }
     const payload = await response.json()
     records.value = Array.isArray(payload.files) ? payload.files : []
+    expanded.value = {}
     table.setPageIndex(0)
   } catch (err) {
     error.value = err instanceof Error ? err.message : 'Unable to load index'
@@ -155,6 +212,23 @@ async function fetchFiles() {
 
 function statusLabel(value) {
   return value ? 'Duplicate' : 'Unique'
+}
+
+function duplicateGroupKey(record) {
+  if (!record?.checksum || record.filesize === undefined || record.filesize === null) {
+    return ''
+  }
+  return `${record.filesize}:${record.checksum}`
+}
+
+function compareRecordsByPath(left, right) {
+  return String(left.absolute_path ?? '').localeCompare(String(right.absolute_path ?? ''))
+}
+
+function toggleDuplicateRow(row) {
+  if (row.getCanExpand()) {
+    row.toggleExpanded()
+  }
 }
 
 function formatBytes(value) {
@@ -271,16 +345,43 @@ function sortLabel(direction) {
               v-for="row in pageRows"
               v-else
               :key="row.id"
-              :class="{ 'duplicate-row': row.original.duplicate }"
+              :aria-expanded="row.getCanExpand() ? row.getIsExpanded() : undefined"
+              :class="{
+                'duplicate-row': row.original.duplicate,
+                'duplicate-subrow': row.depth > 0,
+                'can-expand': row.getCanExpand(),
+                expanded: row.getIsExpanded(),
+              }"
+              :tabindex="row.getCanExpand() ? 0 : undefined"
+              @click="toggleDuplicateRow(row)"
+              @keydown.enter="toggleDuplicateRow(row)"
+              @keydown.space.prevent="toggleDuplicateRow(row)"
             >
               <td
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
                 :class="['cell', `cell-${cell.column.id}`]"
               >
-                <span v-if="cell.column.id === 'duplicate'" class="status-pill">
-                  <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                </span>
+                <div v-if="cell.column.id === 'duplicate'" class="duplicate-cell">
+                  <button
+                    v-if="row.getCanExpand()"
+                    type="button"
+                    class="row-toggle"
+                    :aria-expanded="row.getIsExpanded()"
+                    :aria-label="row.getIsExpanded() ? 'Hide duplicate matches' : 'Show duplicate matches'"
+                    :title="row.getIsExpanded() ? 'Hide duplicate matches' : 'Show duplicate matches'"
+                    @click.stop="row.toggleExpanded()"
+                  >
+                    {{ row.getIsExpanded() ? '-' : '+' }}
+                  </button>
+                  <span v-else class="row-toggle-spacer"></span>
+                  <span class="status-pill">
+                    <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+                  </span>
+                  <span v-if="row.getCanExpand()" class="match-count">
+                    {{ row.original.subRows.length }} {{ row.original.subRows.length === 1 ? 'match' : 'matches' }}
+                  </span>
+                </div>
                 <FlexRender v-else :render="cell.column.columnDef.cell" :props="cell.getContext()" />
               </td>
             </tr>
